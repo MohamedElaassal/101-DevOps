@@ -16,6 +16,7 @@ jobs:
 
       # Step 2: Connect to our cloud server and deploy
       - name: Deploy to server
+        id: deploy_step
         uses: appleboy/ssh-action@v0.1.5
         with:
           host: ${{ secrets.HOST }}
@@ -28,3 +29,38 @@ jobs:
             git pull origin master
             docker compose down
             docker compose up -d --build
+
+      # Step 3: Notify n8n with deployment result (success/failure)
+      - name: Notify n8n
+        if: always()
+        env:
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+          DEPLOY_OUTCOME: ${{ steps.deploy_step.outcome }}
+        run: |
+          if [ "$DEPLOY_OUTCOME" = "success" ]; then
+            STATUS="success"
+          else
+            STATUS="failure"
+          fi
+
+          payload=$(cat <<EOF
+          {
+            "status": "$STATUS",
+            "repository": "${{ github.repository }}",
+            "branch": "${{ github.ref_name }}",
+            "actor": "${{ github.actor }}",
+            "sha": "${{ github.sha }}",
+            "commit_message": "${{ github.event.head_commit.message }}",
+            "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "run_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "workflow": "${{ github.workflow }}",
+            "timestamp": "$(date -u +%FT%TZ)",
+            "environment": "production"
+          }
+          EOF
+          )
+
+          curl -sS -X POST "$N8N_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$payload" || true
