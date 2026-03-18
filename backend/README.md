@@ -129,6 +129,6 @@ The API will be available at http://localhost:3000
 - Check the component-specific README files for detailed setup instructions
 - Review the troubleshooting sections for common issues
 - Feel free to reach out if you run into any issues or have questions:
-    - LinkedIn: [in/mohamed-el-aassal-910486267](https://www.linkedin.com/in/mohamed-el-aassal/)
+    - LinkedIn: [in/mohamed-el-aassal](https://www.linkedin.com/in/mohamed-el-aassal-910486267)
     - Mail: [mohamedelaassal42@gmail.com](mohamedelaassal42@gmail.com)
 
