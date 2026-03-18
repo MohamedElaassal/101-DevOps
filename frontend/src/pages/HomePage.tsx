@@ -122,7 +122,7 @@ const HomePage = () => {
         )}
       </div>
 
-      {/* Features */}
+      {/* features */}
       <div className="grid md:grid-cols-3 gap-6">
         <Link to="/progress" className="group">
           <div className="h-full bg-white border border-gray-200 rounded-xl p-6 hover:border-primary-400 hover:shadow-md transition-all">
