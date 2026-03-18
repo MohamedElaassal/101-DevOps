@@ -79,7 +79,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Daily Insight */}
+      {/* daily Insight */}
       <div className="bg-gradient-to-br from-primary-50 to-white border border-primary-200 rounded-2xl p-8 mb-16 max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
