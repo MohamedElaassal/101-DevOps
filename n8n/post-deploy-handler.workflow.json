@@ -1,0 +1,308 @@
+{
+  "name": "101-DevOps Post Deploy Handler (Simple)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "github-cicd-events",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Incoming CI/CD Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "={{$json.body?.status || $json.status || 'unknown'}}"
+            },
+            {
+              "name": "repository",
+              "value": "={{$json.body?.repository || $json.repository || 'unknown-repo'}}"
+            },
+            {
+              "name": "branch",
+              "value": "={{$json.body?.branch || $json.branch || 'unknown-branch'}}"
+            },
+            {
+              "name": "actor",
+              "value": "={{$json.body?.actor || $json.actor || 'unknown-user'}}"
+            },
+            {
+              "name": "sha",
+              "value": "={{$json.body?.sha || $json.sha || 'unknown-sha'}}"
+            },
+            {
+              "name": "commit_message",
+              "value": "={{$json.body?.commit_message || $json.commit_message || 'No commit message'}}"
+            },
+            {
+              "name": "run_number",
+              "value": "={{$json.body?.run_number || $json.run_number || ''}}"
+            },
+            {
+              "name": "run_url",
+              "value": "={{$json.body?.run_url || $json.run_url || ''}}"
+            },
+            {
+              "name": "workflow",
+              "value": "={{$json.body?.workflow || $json.workflow || 'Deploy to GCP'}}"
+            },
+            {
+              "name": "environment",
+              "value": "={{$json.body?.environment || $json.environment || 'production'}}"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Normalize Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.status}}",
+                    "rightValue": "success",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.status}}",
+                    "rightValue": "failure",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "failure"
+            }
+          ]
+        },
+        "fallbackOutput": "extra"
+      },
+      "id": "3",
+      "name": "Route by Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "text",
+              "value": "=DEPLOY SUCCESS\nRepo: {{$json.repository}}\nBranch: {{$json.branch}}\nActor: {{$json.actor}}\nSHA: {{$json.sha}}\nWorkflow: {{$json.workflow}}\nRun: {{$json.run_number}}\nURL: {{$json.run_url}}\nEnv: {{$json.environment}}\nCommit: {{$json.commit_message}}"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Build Success Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "text",
+              "value": "=DEPLOY FAILURE\nRepo: {{$json.repository}}\nBranch: {{$json.branch}}\nActor: {{$json.actor}}\nSHA: {{$json.sha}}\nWorkflow: {{$json.workflow}}\nRun: {{$json.run_number}}\nURL: {{$json.run_url}}\nEnv: {{$json.environment}}\nCommit: {{$json.commit_message}}"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Build Failure Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "text",
+              "value": "=DEPLOY EVENT (UNKNOWN STATUS)\nStatus: {{$json.status}}\nRepo: {{$json.repository}}\nBranch: {{$json.branch}}\nURL: {{$json.run_url}}"
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "Build Fallback Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.N8N_NOTIFY_WEBHOOK_URL}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"text\": $json.text}",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Incoming CI/CD Event": {
+      "main": [
+        [
+          {
+            "node": "Normalize Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Payload": {
+      "main": [
+        [
+          {
+            "node": "Route by Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Status": {
+      "main": [
+        [
+          {
+            "node": "Build Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Fallback Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Message": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failure Message": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Fallback Message": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "versionId": "2",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "id": "101-devops-post-deploy-handler-simple"
+}
